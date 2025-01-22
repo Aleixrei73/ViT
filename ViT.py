@@ -28,7 +28,7 @@ class MultiheadSelfAttentionBock(nn.Module):
 
     def forward(self, x):
         x = self.norm(x)
-        attn_output, _ = self.multihead_attn(query=x, key=x, value=x, need_wheights=False)
+        attn_output, _ = self.multihead_attn(query=x, key=x, value=x, need_weights=False)
 
         return attn_output
     
@@ -40,9 +40,9 @@ class MLPBlock(nn.Module):
         self.norm = nn.LayerNorm(normalized_shape=embbeding_dim)
 
         self.mlp = nn.Sequential(
-            nn.Linear(in_features=embbeding_dim, out_features=mlp_size)
+            nn.Linear(in_features=embbeding_dim, out_features=mlp_size),
             nn.GELU(),
-            nn.Dropout(p=dropout)
+            nn.Dropout(p=dropout),
             nn.Linear(in_features=mlp_size, out_features=embbeding_dim),
             nn.Dropout(p=dropout)
         )
@@ -76,7 +76,7 @@ class ViT(nn.Module):
         self.num_patches = (img_size * img_size) // patch_size**2
 
         self.class_embedding = nn.Parameter(torch.randn(1, 1, embbeding_dim), requires_grad=True)
-        self.position_embedding = nn.Parameter(torch.randn(1, self.num_patches+1), requires_grad=True)
+        self.position_embedding = nn.Parameter(torch.randn(1, self.num_patches+1, embbeding_dim), requires_grad=True)
 
         self.embedding_dropout = nn.Dropout(p=embbeding_dropout)
 
