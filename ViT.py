@@ -66,28 +66,57 @@ class TransformerEncoderBlock(nn.Module):
         return x
 
 class ViT(nn.Module):
+    """
+    
+    Visual transformed from https://arxiv.org/pdf/2010.11929.
 
-    def __init__(self, img_size=224, in_channels=3, patch_size=16, num_transformers_layers=12, embbeding_dim=768,
-                 mlp_size=3072, num_heads=12, attn_dropout=0, mlp_dropout=0.1, embbeding_dropout=0.1, num_classes=1000):
+    Parameters
+    ==========
+        `img_size` : int
+            The image size. It must be a image of resolution (img_size, img_size)
+        `in_channels` : int
+            The number of channels the image has (usualy 3 for RGB or 1 for gray scale)
+        `patch_size` : int
+            The size of the patches
+        `num_transformers_layers` : int
+            The number of transformer layers
+        `embedding_dim` : int
+            The embedding dimension
+        `mlp_size` : int
+            The number of hidden units for each mlp
+        `num_heads` : int
+            Number of heads in each of the multihead self-attention blocks
+        `attn_dropout` : float
+            The dropout probability on the self-attention blocks inside the encoder
+        `mlp_dropout` : float
+            The dropout probability on the mlp blocks in the encoder
+        `embedding_dropout` : float
+            The dropout probability between the embedding layer and the transformer
+        `num_classes` : int
+            The number of classes to predict
+    """
+
+    def __init__(self, img_size:int=224, in_channels:int=3, patch_size:int=16, num_transformers_layers:int=12, embedding_dim:int=768,
+                 mlp_size:int=3072, num_heads:int=12, attn_dropout:float=0, mlp_dropout:float=0.1, embbeding_dropout:float=0.1, num_classes:int=1000):
         super().__init__()
 
         assert img_size % patch_size == 0, f"Image size must be divisible by patch size, image size: {img_size}, patch size: {patch_size}."
 
         self.num_patches = (img_size * img_size) // patch_size**2
 
-        self.class_embedding = nn.Parameter(torch.randn(1, 1, embbeding_dim), requires_grad=True)
-        self.position_embedding = nn.Parameter(torch.randn(1, self.num_patches+1, embbeding_dim), requires_grad=True)
+        self.class_embedding = nn.Parameter(torch.randn(1, 1, embedding_dim), requires_grad=True)
+        self.position_embedding = nn.Parameter(torch.randn(1, self.num_patches+1, embedding_dim), requires_grad=True)
 
         self.embedding_dropout = nn.Dropout(p=embbeding_dropout)
 
-        self.patch_embedding = PatchEmbedding(in_channels=in_channels, patch_size=patch_size, embeding_dim=embbeding_dim)
+        self.patch_embedding = PatchEmbedding(in_channels=in_channels, patch_size=patch_size, embeding_dim=embedding_dim)
 
-        self.transformer_encoder = nn.Sequential(*[TransformerEncoderBlock(embbeding_dim=embbeding_dim, num_heads=num_heads,
+        self.transformer_encoder = nn.Sequential(*[TransformerEncoderBlock(embbeding_dim=embedding_dim, num_heads=num_heads,
                                                                            mlp_size=mlp_size, mlp_dropout=mlp_dropout, attn_dropout=attn_dropout)
                                                                            for _ in range(num_transformers_layers)])
         self.classifier = nn.Sequential(
-            nn.LayerNorm(normalized_shape=embbeding_dim),
-            nn.Linear(in_features=embbeding_dim, out_features=num_classes)
+            nn.LayerNorm(normalized_shape=embedding_dim),
+            nn.Linear(in_features=embedding_dim, out_features=num_classes)
         )
 
     def forward(self, x):
